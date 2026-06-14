@@ -4,7 +4,7 @@ import httpx
 # Ollama runs as its own container/pod and exposes an HTTP API.
 # OLLAMA_HOST and OLLAMA_MODEL are injected via env vars / ConfigMap.
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
-OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "llama3.2:1b")
+OLLAMA_MODEL = os.getenv("OLLAMA_MODEL", "qwen2.5:0.5b")
 
 TIMEOUT = httpx.Timeout(60.0)
 

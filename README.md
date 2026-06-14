@@ -12,7 +12,7 @@ flowchart LR
     U[Browser User] -->|HTTP :8080| FE[Frontend<br/>Nginx + HTML/CSS/JS]
     FE -->|/api/chat proxy| BE[Backend<br/>FastAPI :8000]
     BE -->|SQL| DB[(PostgreSQL :5432)]
-    BE -->|/api/generate| AI[Ollama LLM :11434<br/>llama3.2:1b]
+    BE -->|/api/generate| AI[Ollama LLM :11434<br/>qwen2.5:0.5b]
     BE -->|/metrics| PROM[Prometheus :9090]
     PROM --> GRAF[Grafana :3000]
     CI[Jenkins CI/CD] -->|build & push images| REG[(Docker Hub)]
@@ -70,7 +70,7 @@ ai-chatbot-devops/
 ### Step 1: Prerequisites
 - Docker Desktop installed (Windows/Mac/Linux) — includes `docker compose`
 - Git installed
-- ~6 GB free disk space (for the AI model)
+- ~1 GB free disk space (for the small AI model)
 
 ### Step 2: Clone / open the project
 ```bash
@@ -83,11 +83,21 @@ docker compose up -d --build
 ```
 This starts 6 containers: `postgres`, `ollama`, `backend`, `frontend`, `prometheus`, `grafana`.
 
-### Step 4: Pull the open-source AI model (one-time, ~1.3 GB)
+### Step 4: Pull the open-source AI model (one-time, ~400 MB — fast!)
 ```bash
-docker exec -it chatbot-ollama ollama pull llama3.2:1b
+docker exec -it chatbot-ollama ollama pull qwen2.5:0.5b
 ```
-Wait for it to finish (progress bar in terminal). You can use any other Ollama model (`phi3`, `gemma2:2b`, etc.) — just update `OLLAMA_MODEL` in `docker-compose.yml`.
+This is a small model, so it downloads quickly and runs even on low-RAM machines (good for laptops/demos).
+
+**Other lightweight options** (update `OLLAMA_MODEL` in `docker-compose.yml` if you switch):
+
+| Model | Approx. size | Notes |
+|---|---|---|
+| `qwen2.5:0.5b` | ~400 MB | Default — good balance of speed & quality |
+| `smollm2:360m` | ~725 MB | Slightly better replies, still fast |
+| `smollm2:135m` | ~270 MB | Smallest, very basic replies |
+| `tinyllama` | ~638 MB | Older but solid for short Q&A |
+| `llama3.2:1b` | ~1.3 GB | Better quality if you have the bandwidth |
 
 ### Step 5: Check everything is healthy
 ```bash
@@ -96,7 +106,7 @@ curl http://localhost:8000/health
 ```
 Expected response:
 ```json
-{"status":"ok","database":"ok","model_backend":"llama3.2:1b"}
+{"status":"ok","database":"ok","model_backend":"qwen2.5:0.5b"}
 ```
 
 ---
@@ -167,7 +177,7 @@ kubectl apply -f k8s/hpa.yaml
 ### Step 5: Pull the AI model inside the Ollama pod (one-time)
 ```bash
 kubectl get pods -n ai-chatbot
-kubectl exec -it <ollama-pod-name> -n ai-chatbot -- ollama pull llama3.2:1b
+kubectl exec -it <ollama-pod-name> -n ai-chatbot -- ollama pull qwen2.5:0.5b
 ```
 
 ### Step 6: Access the app
@@ -279,7 +289,7 @@ Then connect this repo in your Jenkins Pipeline job (Step 4 above) so CI/CD trig
 | Frontend | HTML, CSS, JavaScript, served by Nginx |
 | Backend | FastAPI (Python), SQLAlchemy |
 | Database | PostgreSQL |
-| AI Model | Ollama (open-source LLM, e.g. `llama3.2:1b`) |
+| AI Model | Ollama (open-source LLM, e.g. `qwen2.5:0.5b`) |
 | Containerization | Docker, Docker Compose |
 | Orchestration | Kubernetes (Deployments, Services, Ingress, HPA, ConfigMaps, Secrets) |
 | CI/CD | Jenkins (Jenkinsfile) |
@@ -289,7 +299,7 @@ Then connect this repo in your Jenkins Pipeline job (Step 4 above) so CI/CD trig
 
 ## 11. Troubleshooting
 
-- **"AI model server not reachable"** → run `docker exec -it chatbot-ollama ollama pull llama3.2:1b` and wait for download.
+- **"AI model server not reachable"** → run `docker exec -it chatbot-ollama ollama pull qwen2.5:0.5b` and wait for download.
 - **Backend can't connect to DB** → check `docker compose logs postgres` and confirm `DATABASE_URL` matches the Postgres credentials.
 - **Frontend shows blank page** → check `docker compose logs frontend` and confirm backend is reachable at `http://backend:8000`.
 - **Kubernetes pods stuck in `Pending`** → likely PVC not bound; check storage class with `kubectl get pvc -n ai-chatbot`.

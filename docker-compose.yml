@@ -31,7 +31,7 @@ services:
     volumes:
       - ollama_data:/root/.ollama
     # On first start, pull a small model:
-    #   docker exec -it chatbot-ollama ollama pull llama3.2:1b
+    #   docker exec -it chatbot-ollama ollama pull qwen2.5:0.5b
 
   # ---------------- Backend API ----------------
   backend:
@@ -41,7 +41,7 @@ services:
     environment:
       DATABASE_URL: postgresql://chatuser:chatpass@postgres:5432/chatdb
       OLLAMA_HOST: http://ollama:11434
-      OLLAMA_MODEL: llama3.2:1b
+      OLLAMA_MODEL: qwen2.5:0.5b
     ports:
       - "8000:8000"
     depends_on:
