@@ -93,8 +93,5 @@ pipeline {
         failure {
             echo "❌ Pipeline failed — check logs for details"
         }
-        always {
-            sh 'docker logout || true'
-        }
     }
 }
