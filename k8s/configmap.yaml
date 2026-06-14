@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: chatbot-config
+  namespace: ai-chatbot
+data:
+  OLLAMA_HOST: "http://ollama:11434"
+  OLLAMA_MODEL: "llama3.2:1b"
+  POSTGRES_DB: "chatdb"
+  POSTGRES_USER: "chatuser"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: chatbot-secret
+  namespace: ai-chatbot
+type: Opaque
+stringData:
+  # Change this before deploying to a real cluster!
+  POSTGRES_PASSWORD: "chatpass"
+  DATABASE_URL: "postgresql://chatuser:chatpass@postgres:5432/chatdb"

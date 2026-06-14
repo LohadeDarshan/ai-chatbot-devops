@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Chatbot — DevOps Demo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div class="page">
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-dot"></span>
+        <span class="brand-text">ai-chatbot<span class="brand-accent">.devops</span></span>
+      </div>
+      <div class="topbar-meta" id="model-meta">model: connecting…</div>
+    </header>
+
+    <main class="layout">
+
+      <!-- Chat window styled like a terminal -->
+      <section class="terminal">
+        <div class="terminal-titlebar">
+          <div class="tl-dots">
+            <span class="dot red"></span>
+            <span class="dot yellow"></span>
+            <span class="dot green"></span>
+          </div>
+          <div class="tl-title">chat-session — fastapi backend</div>
+          <div class="tl-session" id="session-id">#session</div>
+        </div>
+
+        <div class="terminal-body" id="chat-window">
+          <div class="msg bot">
+            <span class="msg-tag">bot</span>
+            <p>Hi! I'm an open-source LLM running via Ollama, wired up through a FastAPI backend. Ask me anything to test the pipeline.</p>
+          </div>
+        </div>
+
+        <form class="terminal-input" id="chat-form">
+          <span class="prompt-arrow">➜</span>
+          <input
+            type="text"
+            id="message-input"
+            placeholder="Type a message and hit enter…"
+            autocomplete="off"
+            required
+          />
+          <button type="submit" id="send-btn">Send</button>
+        </form>
+      </section>
+
+      <!-- DevOps status sidebar -->
+      <aside class="status-panel">
+        <h2>Pipeline Status</h2>
+
+        <div class="status-row">
+          <span class="status-label">Frontend</span>
+          <span class="status-pill ok">nginx :80</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Backend API</span>
+          <span class="status-pill" id="status-backend">checking…</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Database</span>
+          <span class="status-pill" id="status-db">checking…</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">AI Model</span>
+          <span class="status-pill" id="status-model">checking…</span>
+        </div>
+
+        <div class="divider"></div>
+
+        <h2>Stack</h2>
+        <ul class="stack-list">
+          <li>FastAPI + SQLAlchemy</li>
+          <li>PostgreSQL</li>
+          <li>Ollama (open-source LLM)</li>
+          <li>Docker + Kubernetes</li>
+          <li>Jenkins CI/CD</li>
+          <li>Prometheus + Grafana</li>
+        </ul>
+
+        <div class="divider"></div>
+
+        <a class="health-link" href="/health" target="_blank" rel="noopener">
+          GET /health →
+        </a>
+        <a class="health-link" href="/docs" target="_blank" rel="noopener">
+          GET /docs (Swagger) →
+        </a>
+      </aside>
+
+    </main>
+
+    <footer class="footer">
+      Built for the AI + DevOps showcase project · Frontend → Backend → DB → AI Model
+    </footer>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>

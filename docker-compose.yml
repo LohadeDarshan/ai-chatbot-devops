@@ -1,0 +1,92 @@
+version: "3.9"
+
+services:
+
+  # ---------------- Database ----------------
+  postgres:
+    image: postgres:16-alpine
+    container_name: chatbot-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: chatuser
+      POSTGRES_PASSWORD: chatpass
+      POSTGRES_DB: chatdb
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U chatuser -d chatdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # ---------------- Open-source AI model server ----------------
+  ollama:
+    image: ollama/ollama:latest
+    container_name: chatbot-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    # On first start, pull a small model:
+    #   docker exec -it chatbot-ollama ollama pull llama3.2:1b
+
+  # ---------------- Backend API ----------------
+  backend:
+    build: ./backend
+    container_name: chatbot-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://chatuser:chatpass@postgres:5432/chatdb
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: llama3.2:1b
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ollama:
+        condition: service_started
+
+  # ---------------- Frontend ----------------
+  frontend:
+    build: ./frontend
+    container_name: chatbot-frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+
+  # ---------------- Monitoring ----------------
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: chatbot-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./monitoring/prometheus-config.yaml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: chatbot-grafana
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    ports:
+      - "3000:3000"
+    volumes:
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  pgdata:
+  ollama_data:
+  grafana_data:
