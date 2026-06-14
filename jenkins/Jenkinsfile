@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')   // Jenkins credential ID
-        DOCKERHUB_USER        = "your-dockerhub-username"
+        DOCKERHUB_USER        = "myserverd"
         IMAGE_TAG             = "${env.BUILD_NUMBER}"
         BACKEND_IMAGE         = "${DOCKERHUB_USER}/ai-chatbot-backend"
         FRONTEND_IMAGE        = "${DOCKERHUB_USER}/ai-chatbot-frontend"
@@ -19,7 +19,8 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                checkout scm
+                echo '📥 Pulling latest code from GitHub...'
+                git branch: 'main', url: 'https://github.com/LohadeDarshan/ai-chatbot-devops.git'
             }
         }
 
