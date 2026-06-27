@@ -66,8 +66,7 @@ pipeline {
             steps {
                 withCredentials([string(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_CONTENT')]) {
                     sh '''
-                        printf "%s" "$KUBECONFIG_CONTENT" > kubeconfig.yaml
-                        export KUBECONFIG=$PWD/kubeconfig.yaml
+                        kubectl get nodes
 
                         kubectl apply -f k8s/namespace.yaml
                         kubectl apply -f k8s/configmap.yaml
