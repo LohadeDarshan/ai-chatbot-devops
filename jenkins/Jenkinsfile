@@ -24,21 +24,20 @@ pipeline {
             }
         }
 
-        stage('Backend: Install & Test') {
+        // ─── STAGE 2: SonarQube Scan ──────────────────────────────────
+        stage('SonarQube Scan') {
             steps {
-                dir('backend') {
-                    sh '''
-                        python3 -m venv venv
-                        . venv/bin/activate
-                        pip install --no-cache-dir -r requirements.txt
-                        # Run tests if a tests/ folder exists
-                        if [ -d tests ]; then
-                            pip install pytest
-                            pytest -q
-                        else
-                            echo "No tests directory found, skipping tests."
-                        fi
-                    '''
+                script {
+                    def scannerHome = tool 'sonar'
+                    withSonarQubeEnv('sonar') {
+                        sh """
+                        ${scannerHome}/bin/sonar-scanner \
+                        -Dsonar.projectKey=dockstack \
+                        -Dsonar.projectName=DockStack \
+                        -Dsonar.sources=backend,frontend \
+                        -Dsonar.javascript.skip=true
+                        """
+                    }
                 }
             }
         }
