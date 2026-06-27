@@ -18,7 +18,7 @@ spec:
       containers:
         - name: backend
           # Replace with your Docker Hub / registry image, built by Jenkins
-          image: <your-dockerhub-username>/ai-chatbot-backend:latest
+          image: myserverd/ai-chatbot-backend:latest
           ports:
             - containerPort: 8000
           env:
