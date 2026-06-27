@@ -7,7 +7,6 @@ pipeline {
         IMAGE_TAG             = "${env.BUILD_NUMBER}"
         BACKEND_IMAGE         = "${DOCKERHUB_USER}/ai-chatbot-backend"
         FRONTEND_IMAGE        = "${DOCKERHUB_USER}/ai-chatbot-frontend"
-        KUBECONFIG_CRED       = credentials('kubeconfig')               // Jenkins credential ID
     }
 
     options {
