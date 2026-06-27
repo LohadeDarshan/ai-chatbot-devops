@@ -32,8 +32,8 @@ pipeline {
                     withSonarQubeEnv('sonar') {
                         sh """
                         ${scannerHome}/bin/sonar-scanner \
-                        -Dsonar.projectKey=dockstack \
-                        -Dsonar.projectName=DockStack \
+                        -Dsonar.projectKey=ai-chatbot-devops \
+                        -Dsonar.projectName=ai-chatbot-devops \
                         -Dsonar.sources=backend,frontend \
                         -Dsonar.javascript.skip=true
                         """
@@ -64,25 +64,28 @@ pipeline {
 
         stage('Deploy to Kubernetes') {
             steps {
-                sh '''
-                    export KUBECONFIG=$KUBECONFIG_CRED
-                    kubectl apply -f k8s/namespace.yaml
-                    kubectl apply -f k8s/configmap.yaml
-                    kubectl apply -f k8s/postgres-deployment.yaml
-                    kubectl apply -f k8s/ollama-deployment.yaml
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                    kubectl apply -f k8s/ingress.yaml
-                    kubectl apply -f k8s/hpa.yaml
+                withCredentials([string(credentialsId: 'kubeconfig', variable: 'KUBECONFIG_CONTENT')]) {
+                    sh '''
+                        printf "%s" "$KUBECONFIG_CONTENT" > kubeconfig.yaml
+                        export KUBECONFIG=$PWD/kubeconfig.yaml
 
-                    # Roll out the new images
-                    kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${IMAGE_TAG} -n ai-chatbot
-                    kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} -n ai-chatbot
+                        kubectl apply -f k8s/namespace.yaml
+                        kubectl apply -f k8s/configmap.yaml
+                        kubectl apply -f k8s/postgres-deployment.yaml
+                        kubectl apply -f k8s/ollama-deployment.yaml
+                        kubectl apply -f k8s/deployment.yaml
+                        kubectl apply -f k8s/service.yaml
+                        kubectl apply -f k8s/ingress.yaml
+                        kubectl apply -f k8s/hpa.yaml
 
-                    kubectl rollout status deployment/backend -n ai-chatbot --timeout=120s
-                    kubectl rollout status deployment/frontend -n ai-chatbot --timeout=120s
-                '''
-            }
+                        kubectl set image deployment/backend backend=${BACKEND_IMAGE}:${IMAGE_TAG} -n ai-chatbot
+                        kubectl set image deployment/frontend frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} -n ai-chatbot
+
+                        kubectl rollout status deployment/backend -n ai-chatbot --timeout=120s
+                        kubectl rollout status deployment/frontend -n ai-chatbot --timeout=120s
+                    '''
+                }
+            }   
         }
     }
 
