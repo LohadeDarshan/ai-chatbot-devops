@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-credentials')   // Jenkins credential ID
+        DOCKERHUB_CREDENTIALS = credentials('myserverd')   // Jenkins credential ID
         DOCKERHUB_USER        = "myserverd"
         IMAGE_TAG             = "${env.BUILD_NUMBER}"
         BACKEND_IMAGE         = "${DOCKERHUB_USER}/ai-chatbot-backend"
@@ -52,13 +52,14 @@ pipeline {
 
         stage('Push Images to Docker Hub') {
             steps {
-                sh '''
-                    echo "$DOCKERHUB_CREDENTIALS_PSW" | docker login -u "$DOCKERHUB_CREDENTIALS_USR" --password-stdin
-                '''
-                sh "docker push ${BACKEND_IMAGE}:${IMAGE_TAG}"
-                sh "docker push ${BACKEND_IMAGE}:latest"
-                sh "docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}"
-                sh "docker push ${FRONTEND_IMAGE}:latest"
+                withDockerRegistry(url: 'https://index.docker.io/v1/', credentialsId: 'dockerHubCred') {
+                    sh """ 
+                        docker push ${BACKEND_IMAGE}:${IMAGE_TAG}
+                        docker push ${BACKEND_IMAGE}:latest
+                        docker push ${FRONTEND_IMAGE}:${IMAGE_TAG}
+                        docker push ${FRONTEND_IMAGE}:latest
+                    """
+                }
             }
         }
 
