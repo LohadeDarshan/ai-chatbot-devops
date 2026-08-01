@@ -5,38 +5,52 @@ metadata:
   namespace: ai-chatbot
   labels:
     app: backend
+
 spec:
   replicas: 2
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+
   selector:
     matchLabels:
       app: backend
+
   template:
     metadata:
       labels:
         app: backend
+
     spec:
       containers:
         - name: backend
-          # Replace with your Docker Hub / registry image, built by Jenkins
           image: myserverd/ai-chatbot-backend:latest
+
           ports:
             - containerPort: 8000
+
           env:
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: chatbot-secret
                   key: DATABASE_URL
+
             - name: OLLAMA_HOST
               valueFrom:
                 configMapKeyRef:
                   name: chatbot-config
                   key: OLLAMA_HOST
+
             - name: OLLAMA_MODEL
               valueFrom:
                 configMapKeyRef:
                   name: chatbot-config
                   key: OLLAMA_MODEL
+
           resources:
             requests:
               memory: "256Mi"
@@ -44,28 +58,45 @@ spec:
             limits:
               memory: "512Mi"
               cpu: "500m"
+
+          # New pod ready hone ka wait karega
+          startupProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 10
+
+          # Traffic tabhi jayega jab pod ready hoga
           readinessProbe:
             httpGet:
               path: /health
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 10
+
+          # Agar application hang ho jaye to restart karega
           livenessProbe:
             httpGet:
               path: /health
               port: 8000
-            initialDelaySeconds: 10
+            initialDelaySeconds: 30
             periodSeconds: 20
+
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend
   namespace: ai-chatbot
+
 spec:
   selector:
     app: backend
+
   ports:
     - port: 8000
       targetPort: 8000
+
   type: ClusterIP
