@@ -8,8 +8,22 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-hostpath
   hostPath:
     path: /data/postgres
+  # Pin this volume to a specific node. Without this, hostPath PVs can be
+  # "used" from any node the pod gets scheduled on, which means a pod
+  # rescheduled to a different node sees an empty directory instead of
+  # its real data, and Postgres can come up in a bad/slow state that the
+  # backend's health checks then race against.
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - node-server
 ---
 apiVersion: v1
 kind: PersistentVolume
@@ -21,5 +35,14 @@ spec:
   accessModes:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
+  storageClassName: local-hostpath
   hostPath:
     path: /data/ollama
+  nodeAffinity:
+    required:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - node-server

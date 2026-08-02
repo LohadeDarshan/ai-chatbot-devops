@@ -15,8 +15,34 @@ from .ollama_client import generate_reply, OLLAMA_MODEL
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("chatbot-api")
 
-# Create DB tables on startup (simple approach; use Alembic for production)
-Base.metadata.create_all(bind=engine)
+
+def init_db_with_retry(max_attempts: int = 10, delay_seconds: int = 5) -> None:
+    """
+    Create DB tables on startup (simple approach; use Alembic for production).
+
+    Postgres may not be reachable in the first few seconds after this pod
+    starts (e.g. the postgres pod is still initializing, or DNS/service
+    routing hasn't settled). Instead of crashing immediately and forcing
+    Kubernetes to restart the whole container, retry with a short delay
+    so the container stays up long enough for readiness/startup probes
+    to keep polling /health.
+    """
+    for attempt in range(1, max_attempts + 1):
+        try:
+            Base.metadata.create_all(bind=engine)
+            logger.info("Database tables ready (attempt %d/%d).", attempt, max_attempts)
+            return
+        except Exception as exc:
+            logger.warning(
+                "DB not ready yet (attempt %d/%d): %s", attempt, max_attempts, exc
+            )
+            if attempt == max_attempts:
+                logger.error("Giving up on DB initialization after %d attempts.", max_attempts)
+                raise
+            time.sleep(delay_seconds)
+
+
+init_db_with_retry()
 
 app = FastAPI(
     title="AI Chatbot API",
