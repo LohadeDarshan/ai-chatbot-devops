@@ -17,20 +17,16 @@ pipeline {
 
     stages {
 
-
         // =====================================================
         // STAGE 1: Checkout latest application code from GitHub
         // =====================================================
         stage('Checkout') {
             steps {
                 echo '📥 Pulling latest code from GitHub...'
-
                 git branch: 'main',
                 url: 'https://github.com/LohadeDarshan/ai-chatbot-devops.git'
             }
         }
-
-
 
         // =====================================================
         // STAGE 2: Analyze source code quality and security using SonarQube
@@ -38,11 +34,8 @@ pipeline {
         stage('SonarQube Scan') {
             steps {
                 script {
-
                     def scannerHome = tool 'sonar'
-
                     withSonarQubeEnv('sonar') {
-
                         sh """
                         ${scannerHome}/bin/sonar-scanner \
                         -Dsonar.projectKey=ai-chatbot-devops \
@@ -55,22 +48,17 @@ pipeline {
             }
         }
 
-
-
         // =====================================================
-        // STAGE 3: Build Docker images for backend and frontend
+        // STAGE 3: Build Docker Images
         // =====================================================
         stage('Build Docker Images') {
-
             steps {
-
                 sh """
                 docker build \
                 -t ${BACKEND_IMAGE}:${IMAGE_TAG} \
                 -t ${BACKEND_IMAGE}:latest \
                 ./backend
                 """
-
 
                 sh """
                 docker build \
@@ -81,20 +69,15 @@ pipeline {
             }
         }
 
-
-
         // =====================================================
-        // STAGE 4: Push Docker images to Docker Hub registry
+        // STAGE 4: Push Images to Docker Hub
         // =====================================================
         stage('Push Images to Docker Hub') {
-
             steps {
-
                 withDockerRegistry(
                     url: 'https://index.docker.io/v1/',
                     credentialsId: 'dockerHubCred'
                 ) {
-
                     sh """
                     docker push ${BACKEND_IMAGE}:${IMAGE_TAG}
                     docker push ${BACKEND_IMAGE}:latest
@@ -106,15 +89,11 @@ pipeline {
             }
         }
 
-
-
         // =====================================================
-        // STAGE 5: Deploy application to Kubernetes cluster
+        // STAGE 5: Deploy Kubernetes
         // =====================================================
-        stage('Deploy to Kubernetes') {
-
+        stage('Deploy Kubernetes') {
             steps {
-
                 withCredentials([
                     file(
                         credentialsId: 'kubeconfig',
@@ -123,59 +102,49 @@ pipeline {
                 ]) {
 
                     sh '''
-
                     kubectl get nodes
-
 
                     kubectl apply -f k8s/namespace.yaml
                     kubectl apply -f k8s/configmap.yaml
 
+                    kubectl apply -f k8s/storageclass.yaml || true
+
+                    kubectl patch pv postgres-pv -p '{"spec":{"claimRef":null}}' || true
+                    kubectl patch pv ollama-pv -p '{"spec":{"claimRef":null}}' || true
 
                     kubectl apply -f k8s/persistent-volumes.yaml
-
 
                     kubectl apply -f k8s/postgres-deployment.yaml
                     kubectl apply -f k8s/ollama-deployment.yaml
 
-
                     kubectl apply -f k8s/backend-deployment.yaml
                     kubectl apply -f k8s/frontend-deployment.yaml
 
-
                     kubectl apply -f k8s/ingress.yaml
                     kubectl apply -f k8s/hpa.yaml
-
-
 
                     kubectl set image deployment/backend \
                     backend=${BACKEND_IMAGE}:${IMAGE_TAG} \
                     -n ai-chatbot
 
-
                     kubectl set image deployment/frontend \
                     frontend=${FRONTEND_IMAGE}:${IMAGE_TAG} \
                     -n ai-chatbot
 
-
-
                     kubectl rollout status deployment/backend \
                     -n ai-chatbot \
-                    --timeout=300s
-
+                    --timeout=900s
 
                     kubectl rollout status deployment/frontend \
                     -n ai-chatbot \
                     --timeout=300s
 
-
                     kubectl get pods -n ai-chatbot
-
                     '''
                 }
             }
         }
     }
-
 
     post {
 
